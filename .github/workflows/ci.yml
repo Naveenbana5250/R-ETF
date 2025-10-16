@@ -1,52 +1,85 @@
+# This file defines the complete CI/CD pipeline for the R-ETF Agent.
+# It includes a build/package job and an automated integration test job.
 name: R-ETF Agent CI/CD Pipeline
 
 on:
   push:
     branches: [ "main" ]
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
+  # ===================================================================
+  # JOB 1: Build all components and package them into a release artifact.
+  # ===================================================================
   build-and-package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (for Rust's udev crate)
         run: sudo apt-get update && sudo apt-get install -y libudev-dev
-      - uses: actions/setup-java@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
         with: { java-version: '11', distribution: 'temurin' }
-      - uses: actions/setup-python@v5
+
+      - name: Set up Python 3.9 and install dependencies
+        uses: actions/setup-python@v5
         with: { python-version: '3.9' }
-      - run: pip install requests
-      - uses: actions/setup-node@v4
+      - run: python -m pip install --upgrade pip && pip install requests
+
+      - name: Set up Node.js 20 and install dependencies
+        uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - run: npm install --prefix ./node_ui
-      - uses: actions-rs/toolchain@v1
+      - run: npm install
+        working-directory: ./node_ui
+
+      - name: Set up Rust toolchain
+        uses: actions-rs/toolchain@v1
         with: { toolchain: stable, override: true }
-      - name: Build all components
+
+      - name: Build Rust collector (Release)
+        run: cargo build --release
+        working-directory: ./rust_collector
+
+      - name: Compile Java manager
+        run: javac AgentManager.java
+        working-directory: ./java_manager
+
+      - name: Assemble release package
         run: |
-          cargo build --release --manifest-path=rust_collector/Cargo.toml
-          javac java_manager/AgentManager.java
-      - name: Assemble and Upload Artifact
-        run: |
-          mkdir release
+          mkdir -p release
           cp rust_collector/target/release/rust_collector release/
           cp -r java_manager release/
           cp -r python_orchestrator release/
           cp -r node_ui release/
           cp test_harness.sh release/
-          rm -f release/java_manager/AgentManager.java
-      - uses: actions/upload-artifact@v4
+          rm -f release/java_manager/AgentManager.java # Remove source code from release
+
+      - name: Upload Agent Build Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: retf-agent-linux-build
           path: release/
 
+  # ===================================================================
+  # JOB 2: Run an automated integration test against the live agent.
+  # ===================================================================
   integration-test:
     runs-on: ubuntu-latest
+    # This job will only run if the 'build-and-package' job is successful
     needs: build-and-package
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev netcat
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
+      - name: Set up all language runtimes
+        uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: { java-version: '11', distribution: 'temurin' }
       - uses: actions/setup-python@v5
@@ -54,32 +87,49 @@ jobs:
       - run: pip install requests
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
-      - run: npm install --prefix ./node_ui
+      - run: npm install
+        working-directory: ./node_ui
       - uses: actions-rs/toolchain@v1
         with: { toolchain: stable, override: true }
-      - name: Build all components
+
+      - name: Build all components for test
         run: |
           cargo build --release --manifest-path=rust_collector/Cargo.toml
           javac java_manager/AgentManager.java
-      - name: Run agent and automated test
+
+      - name: Run agent and test harness in background
         run: |
-          # Start agent in background, logging to a file
+          # Start the Node.js UI server in the background
+          node node_ui/server.js &
+
+          # Give the server a moment to start
+          sleep 5
+
+          # Start the main agent in the background, redirecting all output to a log file
+          # We use sudo because the Rust collector needs root privileges
           sudo java -cp java_manager AgentManager &> agent_output.log &
-          sleep 15 # Wait for agent to fully initialize
 
-          # Run the test harness with sudo privileges
-          sudo bash ./test_harness.sh
-          sleep 15 # Wait for alerts to be processed
+          # Give the agent time to initialize
+          sleep 10
 
-          echo "--- AGENT LOGS ---"
+          # Run the test harness to generate suspicious activity
+          bash ./test_harness.sh
+
+          # Wait for alerts to be processed
+          sleep 10
+
+          echo "--- Agent Log Output ---"
           cat agent_output.log
-          echo "--------------------"
+          echo "------------------------"
 
-      - name: Verify alerts were triggered
+      - name: Verify that alerts were triggered
         run: |
-          # This now checks for the alerts that are GUARANTEED to be generated
+          # This step checks the log file for the expected alert messages.
+          # If any of these alerts are NOT found, 'grep' will exit with an error,
+          # and the entire pipeline will fail, as expected for a failing test.
           grep "System Information Discovery" agent_output.log
           grep "Script Execution from /tmp" agent_output.log
           grep "Suspicious Process Execution: Netcat" agent_output.log
-          grep "Password File Modification" agent_output.log
-          echo "✅ SUCCESS: All expected alerts were found in the log file."
+          grep "Critical Credential File Access" agent_output.log
+          grep "Potential Ransomware Note" agent_output.log
+          echo "✅ All expected alerts were found in the log file."
