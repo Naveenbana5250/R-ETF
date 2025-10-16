@@ -93,7 +93,7 @@ jobs:
           sleep 15
 
           # Run the test harness with sudo privileges
-          sudo bash ./test_harness.sh
+          sudo bash test_harness.sh
           sleep 15
 
           echo "--- AGENT LOGS ---"

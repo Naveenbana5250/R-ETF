@@ -1,4 +1,4 @@
-k# Make sure you are in the /home/RETF_Agent directory
+# Make sure you are in the /home/RETF_Agent directory
 cd /home/RETF_Agent
 
 cat <<'EOF' > test_harness.sh
