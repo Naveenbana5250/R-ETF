@@ -1,0 +1,25 @@
+#!/bin/bash
+echo "--- R-ETF Full Test Harness (30+ Rules) ---"
+sleep 2
+
+echo "[*] Triggering Low: Network Config Discovery..."
+ip a > /dev/null
+sleep 3
+
+echo "[*] Triggering Medium: File Download via Curl..."
+curl -o /tmp/dummy.zip https://example.com/
+rm /tmp/dummy.zip
+sleep 3
+
+echo "[*] Triggering High: Local Firewall Disablement..."
+echo "ufw disable" > /tmp/fakelog
+sudo head -n 1 /tmp/fakelog > /dev/null # This will generate a process event
+rm /tmp/fakelog
+sleep 3
+
+echo "[*] Triggering Critical: Ransomware Note (Heuristic)..."
+touch /tmp/how_to_recover_your_files.txt
+rm /tmp/how_to_recover_your_files.txt
+sleep 3
+
+echo "--- Test Harness Finished ---"

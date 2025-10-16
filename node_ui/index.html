@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>R-ETF SOC Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #0a0e13;
+      --bg-secondary: #0d1117;
+      --surface-primary: #151b23;
+      --surface-secondary: #1a2129;
+      --surface-tertiary: #0f1419;
+      --text-primary: #e6eef8;
+      --text-secondary: #8b949e;
+      --text-tertiary: #6e7681;
+      --accent-primary: #00d9a8;
+      --accent-secondary: #00a57d;
+      --accent-blue: #3b9eff;
+      --status-critical: #f85149;
+      --status-high: #ff8c42;
+      --status-medium: #d29922;
+      --status-low: #58a6ff;
+      --status-info: #8b949e;
+      --status-success: #3fb950;
+      --border-primary: #30363d;
+      --border-secondary: #21262d;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
+      --shadow-lg: 0 16px 48px rgba(0,0,0,0.5);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-sans); overflow: hidden; }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-width: 1920px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 20px;
+      align-items: center;
+      padding: 16px 20px;
+      background: var(--surface-primary);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(0, 217, 168, 0.25);
+    }
+
+    .brand h1 { font-size: 18px; font-weight: 700; }
+    .brand p { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    .metrics {
+      display: flex;
+      gap: 12px;
+    }
+
+    .metric {
+      padding: 10px 16px;
+      background: var(--surface-tertiary);
+      border: 1px solid var(--border-secondary);
+      border-radius: var(--radius-md);
+      text-align: center;
+      min-width: 90px;
+      transition: var(--transition);
+    }
+
+    .metric:hover { transform: translateY(-2px); }
+
+    .metric-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .metric.critical .metric-value { color: var(--status-critical); }
+    .metric.high .metric-value { color: var(--status-high); }
+    .metric.medium .metric-value { color: var(--status-medium); }
+    .metric.low .metric-value { color: var(--status-low); }
+
+    .connection {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--surface-tertiary);
+      border: 1px solid var(--border-secondary);
+      border-radius: var(--radius-md);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+    }
+
+    .status-dot.connected {
+      background: var(--status-success);
+      box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(63, 185, 80, 0.3); }
+      50% { box-shadow: 0 0 0 6px transparent; }
+    }
+
+    .status-text strong { display: block; font-weight: 600; font-size: 13px; }
+    .status-text small { color: var(--text-tertiary); font-size: 11px; }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .search-box, .filter-select {
+      padding: 10px 14px;
+      background: var(--surface-secondary);
+      border: 1px solid var(--border-secondary);
+      border-radius: var(--radius-md);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+    }
+
+    .search-box::placeholder { color: var(--text-tertiary); }
+
+    .main-layout {
+      display: flex;
+      gap: 20px;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .alerts-panel {
+      flex: 2;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface-primary);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border-secondary);
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 13px;
+      display: grid;
+      grid-template-columns: 110px 2fr 1.5fr 1fr 90px 80px 40px;
+      gap: 16px;
+    }
+
+    .alerts-body {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+
+    .alert-row {
+      display: grid;
+      grid-template-columns: 110px 2fr 1.5fr 1fr 90px 80px 40px;
+      gap: 16px;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-secondary);
+      transition: var(--transition);
+      cursor: pointer;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-row:hover {
+      background: var(--surface-secondary);
+    }
+
+    .alert-row.selected {
+      background: rgba(0, 217, 168, 0.08);
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    .severity-badge {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .severity-critical { background: rgba(248, 81, 73, 0.15); color: var(--status-critical); }
+    .severity-high { background: rgba(255, 140, 66, 0.15); color: var(--status-high); }
+    .severity-medium { background: rgba(210, 153, 34, 0.15); color: var(--status-medium); }
+    .severity-low { background: rgba(88, 166, 255, 0.15); color: var(--status-low); }
+
+    .process-path, .file-path {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    .timestamp { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+
+    .rule-name { font-weight: 600; margin-bottom: 4px; }
+    .rule-desc { font-size: 12px; color: var(--text-secondary); }
+
+    /* AI Insight Panel */
+    .insight-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--surface-primary);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .insight-header {
+      padding: 16px 20px;
+      background: var(--surface-secondary);
+      border-bottom: 1px solid var(--border-secondary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ai-icon {
+      width: 20px;
+      height: 20px;
+      background: linear-gradient(135deg, var(--accent-blue), #6e5dff);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .insight-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .insight-body {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    .insight-section {
+      margin-bottom: 20px;
+    }
+
+    .insight-section h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--accent-primary);
+    }
+
+    .insight-content {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .insight-placeholder {
+      color: var(--text-tertiary);
+      font-style: italic;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .ttp-tag {
+      display: inline-block;
+      background: rgba(59, 158, 255, 0.15);
+      color: var(--accent-blue);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-right: 6px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <div class="brand">
+        <div class="logo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0e13" stroke-width="2">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z"/>
+            <path d="M2 17L12 22L22 17"/>
+            <path d="M2 12L12 17L22 12"/>
+          </svg>
+        </div>
+        <div>
+          <h1>R-ETF Threat Intelligence Dashboard</h1>
+          <p>AI-Augmented Real-Time Telemetry</p>
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric critical"><div class="metric-label">Critical</div><div class="metric-value" id="count-critical">0</div></div>
+        <div class="metric high"><div class="metric-label">High</div><div class="metric-value" id="count-high">0</div></div>
+        <div class="metric medium"><div class="metric-label">Medium</div><div class="metric-value" id="count-medium">0</div></div>
+        <div class="metric low"><div class="metric-label">Low</div><div class="metric-value" id="count-low">0</div></div>
+      </div>
+
+      <div class="connection">
+        <span class="status-dot" id="status-dot"></span>
+        <div class="status-text">
+          <strong id="status-text">Connecting...</strong>
+          <small id="status-time"></small>
+        </div>
+      </div>
+    </header>
+
+    <div class="controls">
+      <input type="text" id="search-input" class="search-box" placeholder="Search alerts (rule, process, path...)" />
+      <select id="severity-filter" class="filter-select">
+        <option value="all">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+    </div>
+
+    <div class="main-layout">
+      <div class="alerts-panel">
+        <div class="panel-header">
+          <div>Time</div>
+          <div>Rule & Description</div>
+          <div>Process / Path</div>
+          <div>Source</div>
+          <div>Severity</div>
+          <div>Type</div>
+          <div></div>
+        </div>
+        <div id="alerts-body" class="alerts-body">
+          <div class="empty-state">Waiting for telemetry...</div>
+        </div>
+      </div>
+
+      <div class="insight-panel">
+        <div class="insight-header">
+          <div class="ai-icon">AI</div>
+          <h2>Threat Insight Assistant</h2>
+        </div>
+        <div id="insight-body" class="insight-body">
+          <div class="insight-placeholder">
+            Select an alert to see AI-powered analysis, MITRE ATT&CK mapping, and recommended actions.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const MAX_ALERTS = 500;
+    let alerts = [];
+    let selectedAlert = null;
+    const filters = { search: '', severity: 'all' };
+
+    const alertsBody = document.getElementById('alerts-body');
+    const insightBody = document.getElementById('insight-body');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const statusTime = document.getElementById('status-time');
+    const searchInput = document.getElementById('search-input');
+    const severityFilter = document.getElementById('severity-filter');
+    const countEls = {
+      critical: document.getElementById('count-critical'),
+      high: document.getElementById('count-high'),
+      medium: document.getElementById('count-medium'),
+      low: document.getElementById('count-low')
+    };
+
+    function formatTime(ts) {
+      return new Date(ts).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function normalizeSeverity(sev) {
+      return (sev || 'low').toLowerCase();
+    }
+
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return str || '';
+      return str.replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '<', '>': '>', '"': '&quot;', "'": '&#039;' }[s]));
+    }
+
+    function generateInsight(alert) {
+      const sev = normalizeSeverity(alert.severity);
+      const rule = alert.rule || 'Unknown Rule';
+      const desc = alert.description || '';
+      const ttps = alert.ttps || [];
+      const process = alert.process?.exe || 'N/A';
+      const file = alert.file?.path || '';
+
+      let explanation = '';
+      if (rule.toLowerCase().includes('persistence')) {
+        explanation = `This alert indicates a potential persistence mechanism. The process <code>${escapeHtml(process)}</code> may be attempting to survive reboots by modifying system startup locations or scheduled tasks.`;
+      } else if (rule.toLowerCase().includes('privilege escalation')) {
+        explanation = `This event suggests an attempt to elevate privileges. The actor may be exploiting misconfigurations or vulnerabilities to gain higher access.`;
+      } else if (rule.toLowerCase().includes('network')) {
+        explanation = `Unusual outbound connection detected. This could indicate data exfiltration or command-and-control (C2) communication.`;
+      } else if (file && file.includes('/tmp/')) {
+        explanation = `Execution from temporary directory is often associated with malware droppers or living-off-the-land techniques.`;
+      } else {
+        explanation = `This alert matches the detection rule "${escapeHtml(rule)}". Review the process context and associated telemetry for signs of malicious activity.`;
+      }
+
+      let recommendation = '';
+      if (sev === 'critical' || sev === 'high') {
+        recommendation = `Isolate the host immediately. Collect full process tree, network connections, and file hashes for forensic analysis.`;
+      } else {
+        recommendation = `Monitor for additional suspicious behavior. Correlate with other alerts from the same endpoint.`;
+      }
+
+      const ttpList = ttps.length
+        ? ttps.map(t => `<span class="ttp-tag">${escapeHtml(t)}</span>`).join('')
+        : '<span class="ttp-tag">T1059 - Command and Scripting Interpreter</span>'; // fallback
+
+      return `
+        <div class="insight-section">
+          <h3>What Happened?</h3>
+          <div class="insight-content">${explanation}</div>
+        </div>
+        <div class="insight-section">
+          <h3>Why It Matters</h3>
+          <div class="insight-content">
+            This activity is consistent with adversary behaviors documented in the MITRE ATT&CK framework.
+            ${ttpList}
+          </div>
+        </div>
+        <div class="insight-section">
+          <h3>Recommended Action</h3>
+          <div class="insight-content">${recommendation}</div>
+        </div>
+      `;
+    }
+
+    function render() {
+      const filtered = alerts.filter(alert => {
+        const matchesSearch = !filters.search ||
+          alert.rule?.toLowerCase().includes(filters.search) ||
+          alert.description?.toLowerCase().includes(filters.search) ||
+          alert.process?.exe?.toLowerCase().includes(filters.search) ||
+          alert.file?.path?.toLowerCase().includes(filters.search);
+        const matchesSeverity = filters.severity === 'all' || normalizeSeverity(alert.severity) === filters.severity;
+        return matchesSearch && matchesSeverity;
+      });
+
+      if (filtered.length === 0) {
+        alertsBody.innerHTML = '<div class="empty-state">No matching alerts</div>';
+        return;
+      }
+
+      const html = filtered.map(a => {
+        const processInfo = a.process ? `<div class="process-path">${escapeHtml(a.process.exe)}</div>` : '';
+        const fileInfo = a.file ? `<div class="file-path">${escapeHtml(a.file.path)}</div>` : '';
+        const source = a.src || a.source || 'agent';
+        const type = a.type || 'event';
+        const sevClass = `severity-${normalizeSeverity(a.severity)}`;
+
+        return `
+          <div class="alert-row" data-id="${a.id}" onclick="selectAlert('${a.id}')">
+            <div class="timestamp">${formatTime(a.ts)}</div>
+            <div>
+              <div class="rule-name">${escapeHtml(a.rule)}</div>
+              <div class="rule-desc">${escapeHtml(a.description)}</div>
+            </div>
+            <div>${processInfo}${fileInfo}</div>
+            <div>${escapeHtml(source)}</div>
+            <div><span class="severity-badge ${sevClass}">${normalizeSeverity(a.severity).toUpperCase()}</span></div>
+            <div>${escapeHtml(type)}</div>
+            <div>⋯</div>
+          </div>
+        `;
+      }).join('');
+
+      alertsBody.innerHTML = html;
+    }
+
+    window.selectAlert = function(id) {
+      selectedAlert = alerts.find(a => a.id === id);
+      if (selectedAlert) {
+        document.querySelectorAll('.alert-row').forEach(el => el.classList.remove('selected'));
+        document.querySelector(`.alert-row[data-id="${id}"]`).classList.add('selected');
+        insightBody.innerHTML = generateInsight(selectedAlert);
+      }
+    };
+
+    function updateCounters() {
+      const counts = { critical: 0, high: 0, medium: 0, low: 0 };
+      alerts.forEach(a => {
+        const sev = normalizeSeverity(a.severity);
+        if (counts.hasOwnProperty(sev)) counts[sev]++;
+      });
+      Object.entries(counts).forEach(([k, v]) => { countEls[k].textContent = v; });
+    }
+
+    const socket = io();
+
+    socket.on('connect', () => {
+      statusDot.className = 'status-dot connected';
+      statusText.textContent = 'CONNECTED';
+      statusTime.textContent = `Since ${new Date().toLocaleTimeString()}`;
+    });
+
+    socket.on('disconnect', () => {
+      statusDot.className = 'status-dot';
+      statusText.textContent = 'DISCONNECTED';
+      statusTime.textContent = '';
+    });
+
+    socket.on('new_alert', (data) => {
+      alerts.unshift(data);
+      if (alerts.length > MAX_ALERTS) alerts.length = MAX_ALERTS;
+      updateCounters();
+      render();
+    });
+
+    searchInput.addEventListener('input', () => {
+      filters.search = searchInput.value.trim().toLowerCase();
+      render();
+    });
+
+    severityFilter.addEventListener('change', () => {
+      filters.severity = severityFilter.value;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

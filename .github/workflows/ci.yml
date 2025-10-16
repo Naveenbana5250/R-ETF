@@ -1,0 +1,22 @@
+# The name of your CI pipeline
+name: Build R-ETF Agent
+
+# This section defines when the pipeline should run.
+# We'll trigger it on every push to the 'main' branch.
+on:
+  push:
+    branches: [ "main" ]
+
+# This section defines the jobs to run.
+jobs:
+  # We'll start with one job called 'build'
+  build:
+    # This job will run on a virtual machine with the latest Ubuntu OS
+    runs-on: ubuntu-latest
+
+    # This section lists the steps the job will take
+    steps:
+    # Step 1: This is a standard action that checks out your repository's code
+    # so the pipeline can access it.
+    - name: Checkout repository code
+      uses: actions/checkout@v4
