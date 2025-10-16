@@ -13,8 +13,6 @@ sleep 3
 
 echo "[*] Triggering High: Local Firewall Disablement..."
 echo "ufw disable" > /tmp/fakelog
-# FIX: The 'sudo' is removed from this line.
-# The entire script will be run with sudo privileges from the ci.yml file instead.
 sudo head -n 1 /tmp/fakelog > /dev/null
 rm /tmp/fakelog
 sleep 3
