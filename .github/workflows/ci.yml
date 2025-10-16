@@ -118,8 +118,6 @@ jobs:
 
       - name: Verify alerts were triggered
         run: |
-          grep "System Information Discovery" agent_output.log
-          grep "Script Execution from /tmp" agent_output.log
-          grep "Suspicious Process Execution: Netcat" agent_output.log
-          grep "Password File Modification" agent_output.log
-          echo "✅ SUCCESS: All expected alerts were found in the log file."
+          grep "Connection to IP Address on Web Port" agent_output.log
+          grep "Potential Ransomware Note" agent_output.log
+          echo "SUCCESS: All expected alerts were found in the log file."
