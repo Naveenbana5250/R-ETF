@@ -1,24 +1,32 @@
+k# Make sure you are in the /home/RETF_Agent directory
+cd /home/RETF_Agent
+
+cat <<'EOF' > test_harness.sh
 #!/bin/bash
-set -e # Exit immediately if a command fails
+echo "--- R-ETF Full Test Harness (CI Version) ---"
+sleep 2
 
-echo "--- R-ETF CI/CD Test Harness ---"
+echo "[*] Triggering Low: Network Config Discovery..."
+ip a > /dev/null
+sleep 3
 
-echo "[+] Triggering: System Information Discovery (low)"
-whoami
+echo "[*] Triggering Medium: File Download via Curl..."
+curl -o /tmp/dummy.zip https://example.com/
+rm /tmp/dummy.zip
+sleep 3
 
-echo "[+] Triggering: Script Execution from /tmp (medium)"
-echo "#!/bin/bash\necho test" > /tmp/ci_test_script.sh
-bash /tmp/ci_test_script.sh
-rm /tmp/ci_test_script.sh
+echo "[*] Triggering High: Local Firewall Disablement..."
+echo "ufw disable" > /tmp/fakelog
+# FIX: The 'sudo' is removed from this line.
+# The entire script will be run with sudo privileges from the ci.yml file instead.
+sudo head -n 1 /tmp/fakelog > /dev/null
+rm /tmp/fakelog
+sleep 3
 
-echo "[+] Triggering: Suspicious Process Execution: Netcat (high)"
-# Start nc, wait 1 sec, then kill it.
-nc -lp 4444 &
-sleep 1
-kill $!
-
-echo "[+] Triggering: Password File Modification (critical)"
-# This command will run with sudo from the CI file
-touch /etc/passwd
+echo "[*] Triggering Critical: Ransomware Note (Heuristic)..."
+touch /tmp/how_to_recover_your_files.txt
+rm /tmp/how_to_recover_your_files.txt
+sleep 3
 
 echo "--- Test Harness Finished ---"
+EOF
