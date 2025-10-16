@@ -1,7 +1,3 @@
-# Make sure you are in the /home/RETF_Agent directory
-cd /home/RETF_Agent
-
-cat <<'EOF' > test_harness.sh
 #!/bin/bash
 echo "--- R-ETF Full Test Harness (CI Version) ---"
 sleep 2
@@ -29,4 +25,3 @@ rm /tmp/how_to_recover_your_files.txt
 sleep 3
 
 echo "--- Test Harness Finished ---"
-EOF
