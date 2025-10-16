@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "--- R-ETF Full Test Harness (30+ Rules) ---"
+echo "--- R-ETF Full Test Harness (CI Version) ---"
 sleep 2
 
 echo "[*] Triggering Low: Network Config Discovery..."
@@ -13,7 +13,9 @@ sleep 3
 
 echo "[*] Triggering High: Local Firewall Disablement..."
 echo "ufw disable" > /tmp/fakelog
-sudo head -n 1 /tmp/fakelog > /dev/null # This will generate a process event
+# FIX: The 'sudo' is removed from this line.
+# The entire script will be run with sudo privileges from the ci.yml file instead.
+head -n 1 /tmp/fakelog > /dev/null
 rm /tmp/fakelog
 sleep 3
 

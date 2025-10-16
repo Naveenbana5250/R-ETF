@@ -94,7 +94,7 @@ jobs:
           sleep 5
           sudo java -cp java_manager AgentManager &> agent_output.log &
           sleep 10
-          bash ./test_harness.sh
+          sudo bash ./test_harness.sh
           sleep 10
           echo "--- Agent Log Output ---"
           cat agent_output.log
