@@ -1,7 +1,7 @@
 # 🛡️ R-ETF Agent: Real-Time Cross-Platform Endpoint Telemetry Framework
 
 R-ETF (Real-Time Endpoint Telemetry Framework) is an open-source, multi-language endpoint security agent designed for **real-time telemetry collection, behavioral detection, and SOC-grade visualization**.  
-Developed as part of **Project 7**, it demonstrates how an enterprise-class EDR can be built entirely using **zero-cost, open-source technologies**.
+Developed as MVP, it demonstrates how an enterprise-class EDR can be built entirely using **zero-cost, open-source technologies**.
 
 ---
 
@@ -183,9 +183,9 @@ Alerts visualized in real time, enriched with AI-assisted recommendations and MI
 ## Technical KPIs and Outcomes
 | KPI                    | Target                               | Achieved                   |
 | ---------------------- | ------------------------------------ | -------------------------- |
-| Cross-Platform Support | Linux (MVP), Extensible to Win/macOS | Done                       |
-| CPU Overhead           | < 5 % avg                            | 2 % measured               |
-| Detection Rules        | ≥ 30                                 |  31 rules implemented      |
+| Cross-Platform Support | Linux (MVP), Extensible to Win/macOS |  Done                      |
+| CPU Overhead           | < 5 % avg                            |  3.6% measured             |
+| Detection Rules        | ≥ 30                                 |  32 rules implemented      |
 | CI/CD Automation       | Full build + test validation         |  Passed (see Actions log)  |
 | SOC Visualization      | Live Dashboard + AI Assistant        |  Operational               |
 
